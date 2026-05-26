@@ -1,0 +1,549 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BikeSync Companion — Production Single-File</title>
+  <meta name="description" content="BikeSync Companion: interactive bike health + Competitive Cyclist lowest-price catalog (single-file build)." />
+
+  <!-- Tailwind (CDN) -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    /* Minimal scrollbar styling */
+    .scrollbar::-webkit-scrollbar{height:10px;width:10px}
+    .scrollbar::-webkit-scrollbar-thumb{background:#1f2937;border-radius:999px}
+    .scrollbar::-webkit-scrollbar-track{background:transparent}
+
+    /* Improve tap targets on mobile */
+    button { -webkit-tap-highlight-color: transparent; }
+  </style>
+</head>
+<body class="bg-[#070a12] text-slate-100">
+  <div class="min-h-screen">
+    <!-- Top bar -->
+    <header class="sticky top-0 z-50 border-b border-slate-900/80 bg-[#05070d]/85 backdrop-blur">
+      <div class="mx-auto max-w-6xl px-4 py-3 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <div class="h-9 w-9 rounded-xl bg-gradient-to-br from-cyan-500 to-emerald-400 grid place-items-center text-black font-black">BS</div>
+          <div>
+            <div class="text-sm font-black tracking-widest">BIKESYNC</div>
+            <div class="text-[10px] text-slate-400 font-semibold">Single-file build (static hosting ready)</div>
+          </div>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="text-[10px] font-black tracking-wider uppercase px-2 py-1 rounded-full border border-emerald-500/25 bg-emerald-500/10 text-emerald-300">Live</span>
+          <button id="btnReset" class="text-[11px] font-extrabold px-3 py-1.5 rounded-lg border border-slate-800 bg-slate-950 hover:bg-slate-900">Reset Demo</button>
+        </div>
+      </div>
+    </header>
+
+    <main class="mx-auto max-w-6xl px-4 py-5 grid grid-cols-1 lg:grid-cols-3 gap-4">
+      <!-- Left: schematic + health -->
+      <section class="lg:col-span-2 space-y-4">
+        <!-- Health card -->
+        <div class="rounded-2xl border border-slate-800/80 bg-[#0b0f1b] p-4 flex items-center justify-between">
+          <div>
+            <div class="text-xs text-slate-400 font-bold">Overall Bike Health</div>
+            <div class="mt-1 flex items-end gap-2">
+              <div id="overallHealth" class="text-3xl font-black tracking-tight text-emerald-300">82%</div>
+              <div id="overallLabel" class="text-xs font-bold text-slate-400 pb-1">Good</div>
+            </div>
+            <div class="text-[10px] text-slate-500 mt-1">Calculated across 12 integrated sensor bands.</div>
+          </div>
+          <div class="w-28">
+            <div class="text-[10px] text-slate-500 font-bold mb-1">Quick actions</div>
+            <div class="flex gap-2">
+              <button id="btnRide" class="flex-1 text-[11px] font-extrabold px-3 py-2 rounded-xl bg-cyan-500 text-black hover:opacity-90 active:scale-[0.99]">Simulate Ride</button>
+              <button id="btnMuddy" class="flex-1 text-[11px] font-extrabold px-3 py-2 rounded-xl bg-amber-500 text-black hover:opacity-90 active:scale-[0.99]">Muddy Ride</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Schematic card -->
+        <div class="relative rounded-2xl border border-slate-800/80 bg-[#0b0f1b] overflow-hidden">
+          <div class="px-4 pt-4 flex items-start justify-between">
+            <div>
+              <div class="text-[10px] font-black tracking-widest text-slate-500 uppercase">Interactive Hotspots</div>
+              <div class="text-sm font-extrabold text-slate-200">Factor Ostro VAM 2.0 (demo photo)</div>
+            </div>
+            <div class="text-[10px] text-slate-400 font-bold">Hover a hotspot → click to shop</div>
+          </div>
+
+          <div class="p-4">
+            <div class="relative mx-auto rounded-xl overflow-hidden" style="aspect-ratio: 1.6; max-width: 860px;">
+              <img
+                src="https://images.unsplash.com/photo-1532298229144-0ec0c57515c7?auto=format&fit=crop&w=1400&q=80"
+                class="absolute inset-0 w-full h-full object-cover opacity-80"
+                alt="Bike"
+              />
+              <div class="absolute inset-0 bg-gradient-to-t from-[#070a12]/60 via-transparent to-transparent"></div>
+
+              <!-- Hotspots injected here -->
+              <div id="hotspots" class="absolute inset-0"></div>
+            </div>
+          </div>
+
+          <!-- Selected component strip -->
+          <div class="border-t border-slate-800/70 bg-[#070a12]/70 px-4 py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div>
+              <div class="text-[10px] text-slate-400 font-bold">Selected component</div>
+              <div id="selectedName" class="text-lg font-black">Chain Wax</div>
+              <div class="mt-1 flex items-center gap-2 text-[11px]">
+                <span id="selectedStatus" class="px-2 py-0.5 rounded-full border border-cyan-500/20 bg-cyan-500/10 text-cyan-300 font-black">Fair</span>
+                <span class="text-slate-500 font-bold">Wear:</span>
+                <span id="selectedWear" class="font-black text-slate-200">65%</span>
+              </div>
+            </div>
+            <div class="flex gap-2">
+              <button id="btnWax" class="hidden text-[11px] font-extrabold px-4 py-2 rounded-xl bg-cyan-500 text-black hover:opacity-90">Log Chain Wax</button>
+              <button id="btnReplace" class="text-[11px] font-extrabold px-4 py-2 rounded-xl bg-emerald-500 text-black hover:opacity-90">Replace Part</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Right: catalog -->
+      <aside class="space-y-4">
+        <!-- Catalog card -->
+        <div class="rounded-2xl border border-orange-500/20 bg-[#0b0f1b] overflow-hidden">
+          <div class="h-[3px] bg-gradient-to-r from-orange-500 via-amber-500 to-yellow-400"></div>
+          <div class="p-4">
+            <div class="flex items-start justify-between gap-3">
+              <div>
+                <div class="flex items-center gap-2">
+                  <div class="h-8 w-8 rounded-xl bg-orange-500/10 text-orange-400 grid place-items-center font-black">CC</div>
+                  <div>
+                    <div class="text-[11px] font-black tracking-widest uppercase text-orange-400">Competitive Cyclist</div>
+                    <div class="text-[10px] text-slate-400 font-semibold">Lowest-price replacement finder</div>
+                  </div>
+                </div>
+              </div>
+              <label class="text-[10px] text-slate-400 font-bold flex items-center gap-2">
+                <input id="chkCompare" type="checkbox" class="accent-orange-500" checked />
+                Compare competitors
+              </label>
+            </div>
+
+            <div class="mt-3">
+              <div class="relative">
+                <input id="search" class="w-full rounded-xl border border-slate-800 bg-slate-950 px-3 py-2 text-[12px] font-semibold text-slate-200 placeholder:text-slate-600 focus:outline-none focus:border-orange-500/40" placeholder="Search catalog for Chain Wax…" />
+              </div>
+              <div class="mt-2 flex items-center justify-between gap-2">
+                <div class="flex gap-2">
+                  <button data-sort="price" class="sortBtn text-[10px] font-black px-2 py-1 rounded-lg border border-orange-500/20 bg-orange-500/10 text-orange-300">Lowest Price</button>
+                  <button data-sort="discount" class="sortBtn text-[10px] font-black px-2 py-1 rounded-lg border border-slate-800 bg-slate-950 text-slate-300 hover:bg-slate-900">Best Discount</button>
+                  <button data-sort="rating" class="sortBtn text-[10px] font-black px-2 py-1 rounded-lg border border-slate-800 bg-slate-950 text-slate-300 hover:bg-slate-900">Top Rated</button>
+                </div>
+                <span id="catalogCount" class="text-[10px] text-slate-500 font-bold">0 items</span>
+              </div>
+            </div>
+
+            <div id="catalog" class="mt-3 space-y-2 max-h-[520px] overflow-auto pr-1 scrollbar"></div>
+          </div>
+        </div>
+
+        <!-- Logs -->
+        <div class="rounded-2xl border border-slate-800/80 bg-[#0b0f1b] p-4">
+          <div class="text-xs font-black tracking-wider uppercase text-slate-400">Activity Log</div>
+          <div id="log" class="mt-2 space-y-2 max-h-48 overflow-auto pr-1 scrollbar"></div>
+        </div>
+      </aside>
+    </main>
+
+    <footer class="border-t border-slate-900/90 bg-[#05070d] mt-10 px-4 py-6 text-center text-slate-500 text-xs">
+      <div class="max-w-3xl mx-auto space-y-2">
+        <div class="text-slate-300 font-black tracking-widest text-sm">BIKESYNC</div>
+        <div class="text-[11px] text-slate-500 font-semibold">Production single-file build for GitHub Pages / static hosting.</div>
+        <div class="text-[10px] text-slate-600 font-mono">© 2026 Aptos, LLC. Smarter Care. Smoother Rides. Telemetry & catalog simulated.</div>
+      </div>
+    </footer>
+  </div>
+
+<script>
+  const COMPONENTS = [
+    { id: 'chain', label: 'C', name: 'Chain Wax', color: 'cyan', pos: { left: 45, bottom: 35 } },
+    { id: 'brakes', label: 'B', name: 'Disc Brake Pads', color: 'emerald', pos: { left: 73, bottom: 48 } },
+    { id: 'tires', label: 'T', name: 'Pirelli Racing Tires', color: 'amber', pos: { left: 86, bottom: 52 } },
+    { id: 'cassette', label: 'S', name: 'Sprocket Cassette', color: 'indigo', pos: { left: 23, bottom: 40 } },
+    { id: 'bottom_bracket', label: 'BB', name: 'Bottom Bracket', color: 'purple', pos: { left: 42, bottom: 38 } },
+    { id: 'cranks', label: 'CR', name: 'Cranks', color: 'pink', pos: { left: 46, bottom: 28 } },
+    { id: 'pedals', label: 'PD', name: 'Pedals', color: 'violet', pos: { left: 49, bottom: 18 } },
+    { id: 'headset_bearings', label: 'HB', name: 'Headset Bearings', color: 'sky', pos: { left: 64, bottom: 72 } },
+    { id: 'front_wheel_bearings', label: 'FW', name: 'Front Wheel Bearings', color: 'rose', pos: { left: 78, bottom: 33 } },
+    { id: 'rear_wheel_bearings', label: 'RW', name: 'Rear Wheel Bearings', color: 'teal', pos: { left: 20, bottom: 33 } },
+    { id: 'front_tire_sealant', label: 'FS', name: 'Front Tire Sealant', color: 'orange', pos: { left: 84, bottom: 16 } },
+    { id: 'rear_tire_sealant', label: 'RS', name: 'Rear Tire Sealant', color: 'lime', pos: { left: 12, bottom: 16 } },
+  ];
+
+  const CATALOG = {
+    chain: [
+      { id: 'cc-chain-1', brand: 'Shimano', name: '105 CN-HG601 11-Speed Chain', price: 24.99, msrp: 34.99, rating: 4.7, reviews: 112, lowest: true },
+      { id: 'cc-chain-2', brand: 'Shimano', name: 'Ultegra CN-HG701 11-Speed Chain', price: 38.99, msrp: 44.99, rating: 4.8, reviews: 342, lowest: false },
+      { id: 'cc-chain-3', brand: 'SRAM', name: 'PC-XX1 Eagle 12-Speed Chain (Rainbow)', price: 85.00, msrp: 95.00, rating: 4.9, reviews: 88, lowest: false },
+    ],
+    brakes: [
+      { id: 'cc-br-1', brand: 'Shimano', name: 'L05A Resin Disc Brake Pads', price: 19.99, msrp: 29.99, rating: 4.6, reviews: 154, lowest: true },
+      { id: 'cc-br-2', brand: 'SwissStop', name: 'Disc 34 RS Brake Pads', price: 29.50, msrp: 35.00, rating: 4.8, reviews: 62, lowest: false },
+      { id: 'cc-br-3', brand: 'SRAM', name: 'HRD Disc Brake Pads (Organic)', price: 24.99, msrp: 28.00, rating: 4.5, reviews: 49, lowest: false },
+    ],
+    tires: [
+      { id: 'cc-ti-1', brand: 'Continental', name: 'Grand Prix 5000 S TR Tubeless Tire', price: 74.99, msrp: 99.99, rating: 4.9, reviews: 624, lowest: true },
+      { id: 'cc-ti-2', brand: 'Maxxis', name: 'Minion DHF 3C/EXO Tubeless Tire', price: 68.00, msrp: 84.99, rating: 4.8, reviews: 412, lowest: false },
+      { id: 'cc-ti-3', brand: 'Schwalbe', name: 'Pro One TLE Tubeless Tire', price: 81.00, msrp: 91.00, rating: 4.7, reviews: 145, lowest: false },
+    ],
+    cassette: [
+      { id: 'cc-ca-1', brand: 'Shimano', name: '105 R7000 11-Speed Cassette', price: 52.00, msrp: 68.00, rating: 4.7, reviews: 92, lowest: true },
+      { id: 'cc-ca-2', brand: 'Shimano', name: 'Ultegra R8000 11-Speed Cassette', price: 84.99, msrp: 104.99, rating: 4.8, reviews: 201, lowest: false },
+      { id: 'cc-ca-3', brand: 'SRAM', name: 'XG-1295 Eagle 12-Speed Cassette', price: 384.00, msrp: 415.00, rating: 4.9, reviews: 76, lowest: false },
+    ],
+    bottom_bracket: [
+      { id: 'cc-bb-1', brand: 'Shimano', name: 'BBR60 Bottom Bracket (BSA)', price: 26.99, msrp: 32.99, rating: 4.8, reviews: 114, lowest: true },
+      { id: 'cc-bb-2', brand: 'SRAM', name: 'DUB BSA Bottom Bracket', price: 43.00, msrp: 48.00, rating: 4.6, reviews: 185, lowest: false },
+      { id: 'cc-bb-3', brand: 'Chris King', name: 'ThreadFit 24 Bottom Bracket', price: 196.00, msrp: 210.00, rating: 4.9, reviews: 52, lowest: false },
+    ],
+    cranks: [
+      { id: 'cc-cr-1', brand: 'Shimano', name: '105 R7000 Crankset', price: 159.99, msrp: 189.99, rating: 4.7, reviews: 135, lowest: true },
+      { id: 'cc-cr-2', brand: 'SRAM', name: 'Force AXS Crankset', price: 320.00, msrp: 360.00, rating: 4.8, reviews: 44, lowest: false },
+      { id: 'cc-cr-3', brand: 'Shimano', name: 'Dura-Ace R9200 Crankset', price: 624.99, msrp: 649.99, rating: 4.9, reviews: 68, lowest: false },
+    ],
+    pedals: [
+      { id: 'cc-pd-1', brand: 'Shimano', name: 'PD-M520 SPD Trail Pedals', price: 45.00, msrp: 55.00, rating: 4.9, reviews: 842, lowest: true },
+      { id: 'cc-pd-2', brand: 'Shimano', name: 'PD-R8000 Ultegra Carbon Pedals', price: 179.99, msrp: 199.99, rating: 4.8, reviews: 312, lowest: false },
+      { id: 'cc-pd-3', brand: 'Wahoo', name: 'Speedplay Zero Pedals', price: 229.99, msrp: 249.99, rating: 4.6, reviews: 94, lowest: false },
+    ],
+    headset_bearings: [
+      { id: 'cc-hb-1', brand: 'Cane Creek', name: '40-Series Sealed Headset Bearing', price: 18.50, msrp: 24.99, rating: 4.8, reviews: 215, lowest: true },
+      { id: 'cc-hb-2', brand: 'Chris King', name: 'Precision Replacement Bearing', price: 48.00, msrp: 55.00, rating: 4.9, reviews: 122, lowest: false },
+      { id: 'cc-hb-3', brand: 'FSA', name: 'Orbit Sealed Replacement Bearing', price: 22.00, msrp: 26.00, rating: 4.5, reviews: 83, lowest: false },
+    ],
+    front_wheel_bearings: [
+      { id: 'cc-fw-1', brand: 'Enduro', name: '6802 Sealed Cartridge Bearing', price: 12.99, msrp: 19.99, rating: 4.7, reviews: 88, lowest: true },
+      { id: 'cc-fw-2', brand: 'DT Swiss', name: '240/180 Sealed Hub Bearing', price: 28.00, msrp: 34.00, rating: 4.8, reviews: 104, lowest: false },
+      { id: 'cc-fw-3', brand: 'CeramicSpeed', name: '6802 Ceramic Hub Bearing Kit', price: 135.00, msrp: 150.00, rating: 4.9, reviews: 31, lowest: false },
+    ],
+    rear_wheel_bearings: [
+      { id: 'cc-rw-1', brand: 'Enduro', name: '6802 Sealed Cartridge Bearing', price: 12.99, msrp: 19.99, rating: 4.7, reviews: 88, lowest: true },
+      { id: 'cc-rw-2', brand: 'DT Swiss', name: '240/180 Sealed Hub Bearing', price: 28.00, msrp: 34.00, rating: 4.8, reviews: 104, lowest: false },
+      { id: 'cc-rw-3', brand: 'CeramicSpeed', name: '6802 Ceramic Hub Bearing Kit', price: 135.00, msrp: 150.00, rating: 4.9, reviews: 31, lowest: false },
+    ],
+    front_tire_sealant: [
+      { id: 'cc-fs-1', brand: "Stan's", name: 'NoTubes Tubeless Sealant (16oz)', price: 18.00, msrp: 24.00, rating: 4.9, reviews: 541, lowest: true },
+      { id: 'cc-fs-2', brand: 'Orange Seal', name: 'Endurance Tubeless Sealant (8oz)', price: 19.99, msrp: 23.99, rating: 4.8, reviews: 320, lowest: false },
+      { id: 'cc-fs-3', brand: 'Muc-Off', name: 'No Puncture Hassle Sealant (140ml)', price: 21.50, msrp: 24.99, rating: 4.7, reviews: 114, lowest: false },
+    ],
+    rear_tire_sealant: [
+      { id: 'cc-rs-1', brand: "Stan's", name: 'NoTubes Tubeless Sealant (16oz)', price: 18.00, msrp: 24.00, rating: 4.9, reviews: 541, lowest: true },
+      { id: 'cc-rs-2', brand: 'Orange Seal', name: 'Endurance Tubeless Sealant (8oz)', price: 19.99, msrp: 23.99, rating: 4.8, reviews: 320, lowest: false },
+      { id: 'cc-rs-3', brand: 'Muc-Off', name: 'No Puncture Hassle Sealant (140ml)', price: 21.50, msrp: 24.99, rating: 4.7, reviews: 114, lowest: false },
+    ],
+  };
+
+  const DEFAULT_WEAR = {
+    chain: 65, brakes: 45, tires: 52, cassette: 40,
+    bottom_bracket: 22, cranks: 18, pedals: 25, headset_bearings: 12,
+    front_wheel_bearings: 20, rear_wheel_bearings: 28, front_tire_sealant: 78, rear_tire_sealant: 74,
+  };
+
+  let state = {
+    active: 'chain',
+    wear: { ...DEFAULT_WEAR },
+    sort: 'price',
+    query: '',
+    compare: true,
+    logs: [
+      'BikeSync System Initialized v1.4.2',
+      'Telemetry active. Connected to ANT+ sensors.',
+      'Bike state loaded: Factor Ostro VAM 2.0 (82% overall health).'
+    ]
+  };
+
+  const elHotspots = document.getElementById('hotspots');
+  const elCatalog = document.getElementById('catalog');
+  const elSearch = document.getElementById('search');
+  const elCount = document.getElementById('catalogCount');
+  const elSelectedName = document.getElementById('selectedName');
+  const elSelectedWear = document.getElementById('selectedWear');
+  const elSelectedStatus = document.getElementById('selectedStatus');
+  const elOverall = document.getElementById('overallHealth');
+  const elOverallLabel = document.getElementById('overallLabel');
+  const elLog = document.getElementById('log');
+  const btnReplace = document.getElementById('btnReplace');
+  const btnWax = document.getElementById('btnWax');
+  const chkCompare = document.getElementById('chkCompare');
+
+  function statusForWear(w) {
+    if (w < 50) return { txt: 'Good', cls: 'border-emerald-500/20 bg-emerald-500/10 text-emerald-300' };
+    if (w < 75) return { txt: 'Fair', cls: 'border-cyan-500/20 bg-cyan-500/10 text-cyan-300' };
+    if (w < 90) return { txt: 'Warning', cls: 'border-amber-500/20 bg-amber-500/10 text-amber-300' };
+    return { txt: 'Critical', cls: 'border-red-500/20 bg-red-500/10 text-red-300' };
+  }
+
+  function updateOverall() {
+    const vals = Object.values(state.wear);
+    const avg = vals.reduce((a,b)=>a+b,0) / Math.max(1, vals.length);
+    const health = Math.max(0, Math.min(100, Math.round(100 - avg * 0.5)));
+    elOverall.textContent = health + '%';
+    elOverall.className = 'text-3xl font-black tracking-tight ' + (health > 80 ? 'text-emerald-300' : health > 60 ? 'text-amber-300' : 'text-red-300');
+    elOverallLabel.textContent = health > 80 ? 'Good' : health > 60 ? 'Watch' : 'Service';
+  }
+
+  function log(msg) {
+    const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    state.logs.unshift('[' + time + '] ' + msg);
+    state.logs = state.logs.slice(0, 50);
+    renderLog();
+  }
+
+  function renderLog() {
+    elLog.innerHTML = state.logs.map(l => (
+      '<div class="text-[11px] font-semibold text-slate-300 bg-slate-950/40 border border-slate-800/70 rounded-xl px-3 py-2">' +
+      '<span class="text-slate-500 font-black mr-2">•</span>' +
+      l.replaceAll('<','&lt;').replaceAll('>','&gt;') +
+      '</div>'
+    )).join('');
+  }
+
+  function setActive(id) {
+    state.active = id;
+    const comp = COMPONENTS.find(c => c.id === id);
+    elSelectedName.textContent = comp ? comp.name : id;
+    elSearch.placeholder = 'Search catalog for ' + (comp ? comp.name : id) + '…';
+
+    const wear = state.wear[id] ?? 0;
+    elSelectedWear.textContent = wear + '%';
+    const st = statusForWear(wear);
+    elSelectedStatus.textContent = st.txt;
+    elSelectedStatus.className = 'px-2 py-0.5 rounded-full border font-black ' + st.cls;
+
+    // Chain wax special action
+    if (id === 'chain') {
+      btnWax.classList.remove('hidden');
+      btnReplace.classList.add('hidden');
+    } else {
+      btnWax.classList.add('hidden');
+      btnReplace.classList.remove('hidden');
+    }
+
+    renderCatalog();
+  }
+
+  function renderHotspots() {
+    elHotspots.innerHTML = '';
+    COMPONENTS.forEach(c => {
+      const wear = state.wear[c.id] ?? 0;
+      const st = statusForWear(wear);
+      const isCritical = wear >= 90;
+      const color = isCritical ? 'amber' : c.color;
+
+      const btn = document.createElement('button');
+      btn.className = 'absolute focus:outline-none';
+      btn.style.left = c.pos.left + '%';
+      btn.style.bottom = c.pos.bottom + '%';
+      btn.style.transform = 'translate(-50%, 50%)';
+
+      btn.innerHTML = `
+        <span class="absolute inline-flex h-4 w-4 rounded-full opacity-70 animate-ping bg-${color}-500"></span>
+        <span class="relative grid place-items-center rounded-full h-3 w-3 border border-white text-[7px] font-black text-black bg-${color}-300">${c.label}</span>
+        <div class="pointer-events-none opacity-0 hover:opacity-100 transition-opacity absolute bottom-5 left-1/2 -translate-x-1/2 whitespace-nowrap z-50">
+          <div class="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 shadow-2xl ring-1 ring-slate-800">
+            <div class="text-[12px] font-black text-cyan-300">${c.name}</div>
+            <div class="text-[11px] text-slate-400 font-semibold mt-1 flex justify-between gap-4">Wear: <span class="text-slate-200 font-black">${wear}%</span></div>
+            <div class="text-[11px] text-slate-400 font-semibold flex justify-between gap-4">Status: <span class="font-black ${st.txt==='Critical'?'text-red-300':st.txt==='Warning'?'text-amber-300':'text-emerald-300'}">${st.txt}</span></div>
+          </div>
+        </div>
+      `;
+
+      // Show tooltip on hover
+      const tooltip = btn.querySelector('div');
+      btn.addEventListener('mouseenter', () => tooltip.classList.remove('opacity-0'));
+      btn.addEventListener('mouseleave', () => tooltip.classList.add('opacity-0'));
+      btn.addEventListener('click', () => setActive(c.id));
+
+      elHotspots.appendChild(btn);
+    });
+  }
+
+  function sortItems(items) {
+    const sorted = [...items];
+    if (state.sort === 'price') sorted.sort((a,b)=>a.price-b.price);
+    else if (state.sort === 'discount') sorted.sort((a,b)=> (b.msrp-b.price)-(a.msrp-a.price));
+    else sorted.sort((a,b)=>b.rating-a.rating);
+    return sorted;
+  }
+
+  function renderCatalog() {
+    const base = CATALOG[state.active] || [];
+    const q = (state.query || '').trim().toLowerCase();
+    let items = base;
+    if (q) items = base.filter(p => (p.name+p.brand).toLowerCase().includes(q));
+    items = sortItems(items);
+
+    elCount.textContent = items.length + (items.length === 1 ? ' item' : ' items');
+
+    if (!items.length) {
+      elCatalog.innerHTML = '<div class="text-center text-[11px] text-slate-500 font-bold border border-dashed border-slate-800 rounded-xl px-3 py-6">No matching parts found.</div>';
+      return;
+    }
+
+    elCatalog.innerHTML = items.map(p => {
+      const save = (p.msrp - p.price);
+      const pct = Math.round((save / p.msrp) * 100);
+      const lowest = p.lowest ? '<span class="ml-2 text-[9px] font-black px-2 py-0.5 rounded-full border border-emerald-500/20 bg-emerald-500/10 text-emerald-300 uppercase">Lowest</span>' : '';
+
+      const compare = state.compare ? `
+        <div class="mt-2 grid grid-cols-3 text-center text-[10px] font-bold bg-slate-950/40 border border-slate-800/70 rounded-xl overflow-hidden">
+          <div class="px-2 py-2">
+            <div class="text-orange-300 font-black">CC</div>
+            <div class="text-slate-100">$${p.price.toFixed(2)}</div>
+          </div>
+          <div class="px-2 py-2 border-l border-slate-800/70">
+            <div class="text-slate-500">Backcountry</div>
+            <div class="text-slate-400 line-through">$${(p.price*1.15).toFixed(2)}</div>
+          </div>
+          <div class="px-2 py-2 border-l border-slate-800/70">
+            <div class="text-slate-500">JensonUSA</div>
+            <div class="text-slate-400 line-through">$${(p.price*1.21).toFixed(2)}</div>
+          </div>
+        </div>
+      ` : '';
+
+      return `
+        <div class="rounded-2xl border ${p.lowest ? 'border-orange-500/25 bg-slate-900/30' : 'border-slate-800/80 bg-[#070a12]/40'} p-3">
+          <div class="flex items-start gap-3">
+            <div class="h-11 w-11 rounded-xl ${p.lowest ? 'bg-gradient-to-br from-orange-400 to-amber-500 text-black' : 'bg-gradient-to-br from-slate-700 to-slate-500 text-black'} grid place-items-center font-black text-xs">${p.brand.slice(0,3).toUpperCase()}</div>
+            <div class="min-w-0 flex-1">
+              <div class="flex items-start justify-between gap-2">
+                <div class="min-w-0">
+                  <div class="text-[11px] font-black text-slate-200 truncate">${p.brand}${lowest}</div>
+                  <div class="text-[12px] font-bold text-slate-400 truncate">${p.name}</div>
+                </div>
+                <div class="text-right shrink-0">
+                  <div class="text-[14px] font-black text-white">$${p.price.toFixed(2)}</div>
+                  <div class="text-[10px] text-slate-500 line-through">$${p.msrp.toFixed(2)}</div>
+                </div>
+              </div>
+              <div class="mt-2 flex items-center justify-between">
+                <div class="text-[10px] text-slate-500 font-bold">★ <span class="text-slate-300">${p.rating.toFixed(1)}</span> <span class="text-slate-600">(${p.reviews})</span></div>
+                <div class="text-[10px] font-black text-orange-300">Save $${save.toFixed(2)} (${pct}%)</div>
+              </div>
+              ${compare}
+              <div class="mt-2 flex justify-end">
+                <button data-buy="${p.id}" class="buyBtn text-[11px] font-black px-3 py-2 rounded-xl bg-orange-500 hover:bg-orange-600 text-black active:scale-[0.99]">Buy & Install</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    // Wire buy buttons
+    document.querySelectorAll('.buyBtn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const id = e.currentTarget.getAttribute('data-buy');
+        const item = (CATALOG[state.active] || []).find(x => x.id === id);
+        if (!item) return;
+        state.wear[state.active] = 0;
+        renderHotspots();
+        setActive(state.active);
+        updateOverall();
+        const saved = (item.msrp - item.price).toFixed(2);
+        log('🛒 [CC Checkout] Installed ' + item.brand + ' ' + item.name + ' for $' + item.price.toFixed(2) + ' (saved $' + saved + '). Wear reset to 0%.');
+      });
+    });
+  }
+
+  // Controls
+  document.getElementById('btnRide').addEventListener('click', () => {
+    const mult = 1.0;
+    COMPONENTS.forEach(c => {
+      const inc = c.id.includes('sealant') ? Math.round(2 + Math.random()*3) : Math.round((1 + Math.random()*3) * mult);
+      state.wear[c.id] = Math.min(100, (state.wear[c.id]||0) + inc);
+    });
+    renderHotspots();
+    setActive(state.active);
+    updateOverall();
+    log('🚴 Simulated ride: component wear increased across 12 sensors.');
+  });
+  document.getElementById('btnMuddy').addEventListener('click', () => {
+    const mult = 2.5;
+    COMPONENTS.forEach(c => {
+      const inc = c.id.includes('sealant') ? Math.round(2 + Math.random()*4) : Math.round((1 + Math.random()*4) * mult);
+      state.wear[c.id] = Math.min(100, (state.wear[c.id]||0) + inc);
+    });
+    renderHotspots();
+    setActive(state.active);
+    updateOverall();
+    log('⚠️ Muddy ride detected: accelerated wear multiplier applied.');
+  });
+
+  document.getElementById('btnReset').addEventListener('click', () => {
+    state.wear = { ...DEFAULT_WEAR };
+    state.query = '';
+    state.sort = 'price';
+    state.compare = true;
+    chkCompare.checked = true;
+    elSearch.value = '';
+    log('🔄 Reset demo state to defaults.');
+    renderHotspots();
+    setActive('chain');
+    updateOverall();
+    // reset sort UI
+    document.querySelectorAll('.sortBtn').forEach(b => {
+      const sort = b.getAttribute('data-sort');
+      if (sort === 'price') {
+        b.className = 'sortBtn text-[10px] font-black px-2 py-1 rounded-lg border border-orange-500/20 bg-orange-500/10 text-orange-300';
+      } else {
+        b.className = 'sortBtn text-[10px] font-black px-2 py-1 rounded-lg border border-slate-800 bg-slate-950 text-slate-300 hover:bg-slate-900';
+      }
+    });
+  });
+
+  btnReplace.addEventListener('click', () => {
+    state.wear[state.active] = 0;
+    renderHotspots();
+    setActive(state.active);
+    updateOverall();
+    log('⚙️ Replaced worn-out [' + state.active.toUpperCase() + '] with brand new part.');
+  });
+
+  btnWax.addEventListener('click', () => {
+    state.wear.chain = Math.max(0, (state.wear.chain||0) - 3);
+    renderHotspots();
+    setActive('chain');
+    updateOverall();
+    log('🧼 Logged chain wax: wear reduced slightly by grit flush.');
+  });
+
+  chkCompare.addEventListener('change', () => {
+    state.compare = chkCompare.checked;
+    renderCatalog();
+  });
+
+  elSearch.addEventListener('input', () => {
+    state.query = elSearch.value;
+    renderCatalog();
+  });
+
+  document.querySelectorAll('.sortBtn').forEach(b => {
+    b.addEventListener('click', () => {
+      state.sort = b.getAttribute('data-sort');
+      document.querySelectorAll('.sortBtn').forEach(x => {
+        const s = x.getAttribute('data-sort');
+        if (s === state.sort) {
+          x.className = 'sortBtn text-[10px] font-black px-2 py-1 rounded-lg border border-orange-500/20 bg-orange-500/10 text-orange-300';
+        } else {
+          x.className = 'sortBtn text-[10px] font-black px-2 py-1 rounded-lg border border-slate-800 bg-slate-950 text-slate-300 hover:bg-slate-900';
+        }
+      });
+      renderCatalog();
+    });
+  });
+
+  // Init
+  renderHotspots();
+  renderLog();
+  setActive('chain');
+  updateOverall();
+</script>
+</body>
+</html>
